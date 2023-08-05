@@ -16,7 +16,7 @@ pygame.init()
 
 screen = pygame.display.set_mode((BOARD_SIZE * SQUARE_SIZE, BOARD_SIZE * SQUARE_SIZE))  # +200 в y для места под
 # настройки
-pygame.display.set_caption("Шахматы на раздевание")
+pygame.display.set_caption("Chess board")
 
 
 def draw_text(surface, text, size, x, y, color):
@@ -65,6 +65,7 @@ test_board = Board(SQUARE_SIZE=100)
 test_board.create()
 board = test_board.get_board_square()
 print(board[0][0].piece)
+print(test_board.board_square[0][0].inside_pixels)
 
 
 # Главный игровой цикл

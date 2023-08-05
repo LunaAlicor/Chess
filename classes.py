@@ -2,6 +2,17 @@ import os
 import pygame
 
 
+def search_number_in_lists(number, nested_list):
+    for item in nested_list:
+        if isinstance(item, list):
+            if search_number_in_lists(number, item):
+                return True
+        else:
+            if item == number:
+                return True
+    return False
+
+
 class Board:
     def __init__(self, SQUARE_SIZE):
         self.board_square = []
@@ -84,6 +95,7 @@ class Board:
                 else:
                     piece = None
                 square.set_piece(piece)
+                # print(square.coordinates)
                 row_squares.append(square)
             self.board_square.append(row_squares)
 
@@ -115,9 +127,12 @@ class Square:
         self.end_line = end_line
         self.on_fire = self.on_fire_dict[3]
         self.piece = piece
+        self.inside_pixels = [[x for x in range(self.coordinates[0], self.coordinates[0]+96)],
+                              [y for y in range(self.coordinates[1], self.coordinates[1]+96)]]
 
     def get_notation(self):
         print(self.notation)
+        return self.notation
 
     def set_piece(self, new_piece):
         self.piece = new_piece
@@ -179,6 +194,8 @@ class Piece:
         if self.is_dragging:
             self.img_rect.x = event.pos[0] - self.start_drag_x
             self.img_rect.y = event.pos[1] - self.start_drag_y
+            # print(self.img_rect.x, self.img_rect.y)
+            self.point_to_check = [self.img_rect.x, self.img_rect.y]
 
 
 class Pawn(Piece):
