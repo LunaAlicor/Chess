@@ -2,15 +2,17 @@ import os
 import pygame
 
 
-def search_number_in_lists(number, nested_list):
+def search_coordinates_on_board(coordinates, nested_list):
+    x, y = coordinates
     for item in nested_list:
         if isinstance(item, list):
-            if search_number_in_lists(number, item):
-                return True
-        else:
-            if item == number:
-                return True
-    return False
+            result = search_coordinates_on_board(coordinates, item)
+            if result is not None:
+                return result
+        elif isinstance(item, Square):
+            if x in item.inside_pixels[0] and y in item.inside_pixels[1]:
+                return item
+    return None
 
 
 class Board:
@@ -159,6 +161,9 @@ class Piece:
     def taken(self):
         pass
 
+    def img_update(self):
+        pass
+
     def set_img(self):
         if self.color == "white":
             path_components = ['Piece_img', 'defolt', 'white', self.piece_name]
@@ -186,16 +191,25 @@ class Piece:
     def handle_mouse_up(self, event):
         # Обработка события отпускания кнопки мыши
         self.is_dragging = False
-        # if self.current_square:
-        #     self.img_rect.center = self.current_square.centre
+
+        try:
+            result = search_coordinates_on_board(coordinates=self.point_to_check,
+                                            nested_list=self.current_board.board_square)
+            if result:
+                self.current_square = result
+                self.img_rect.center = self.current_square.centre
+            else:
+                self.img_rect.center = self.current_square.centre
+        except:
+            pass
 
     def handle_mouse_drag(self, event):
         # Обработка события перетаскивания фигуры
         if self.is_dragging:
             self.img_rect.x = event.pos[0] - self.start_drag_x
             self.img_rect.y = event.pos[1] - self.start_drag_y
-            # print(self.img_rect.x, self.img_rect.y)
             self.point_to_check = [self.img_rect.x, self.img_rect.y]
+            #print(self.point_to_check)
 
 
 class Pawn(Piece):
