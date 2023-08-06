@@ -33,7 +33,6 @@ class Board:
         def get_square_color(row, col):
             return 'white' if (row + col) % 2 == 0 else 'black'
 
-        # Create the board squares and pieces (assuming you have a Piece class)
         for row in range(8):
             row_squares = []
             for col in range(8):
@@ -102,7 +101,6 @@ class Board:
             self.board_square.append(row_squares)
 
     def get_board_square(self):
-        # print(self.board_square)
         return self.board_square
 
     def update(self):
@@ -121,7 +119,7 @@ class Square:
     on_fire_dict = {0: 'white', 1: 'black', 2: 'black and white', 3: None}
 
     def __init__(self, notation, color, end_line, coordinates, piece=None, SQUARE_SIZE=100):
-        self.notation = notation  # [0; 0]
+        self.notation = list(map(int, notation.replace('[', '').replace(']', '').replace(' ', '').split(';')))  # [0; 0]
         self.coordinates = coordinates  # [700; 800] левый верхний угол клетки
         self.size = SQUARE_SIZE
         self.centre = [x + y for x, y in zip(self.coordinates, [50, 50])]  # [750; 750]
@@ -154,6 +152,8 @@ class Piece:
         self.possible_moves = []
         self.value = 0
         self.current_board.add_piece(self)
+        self.img_rect = None
+        self.is_dragging = False
 
     def move(self):
         pass
@@ -193,11 +193,15 @@ class Piece:
         self.is_dragging = False
 
         try:
+            self.update_possible_moves()
             result = search_coordinates_on_board(coordinates=self.point_to_check,
                                             nested_list=self.current_board.board_square)
-            if result:
+
+            if result and result in self.possible_moves:
                 self.current_square = result
                 self.img_rect.center = self.current_square.centre
+                self.has_moved = True
+                self.position = self.current_square.notation
             else:
                 self.img_rect.center = self.current_square.centre
         except:
@@ -209,52 +213,66 @@ class Piece:
             self.img_rect.x = event.pos[0] - self.start_drag_x
             self.img_rect.y = event.pos[1] - self.start_drag_y
             self.point_to_check = [self.img_rect.x, self.img_rect.y]
-            #print(self.point_to_check)
+
+    def update_possible_moves(self):
+        data = self.current_board.board_square
+        self.possible_moves = [element for sublist in data for element in sublist]
 
 
 class Pawn(Piece):
     def __init__(self, color, current_board: Board, current_square: Square):
         super().__init__(color, current_board, current_square)
         self.piece_name = 'pawn.png'
-        self.img_rect = None
-        self.is_dragging = False
 
 
 class King(Piece):
     def __init__(self, color, current_board, current_square):
         super().__init__(color, current_board, current_square)
         self.piece_name = 'king.png'
-        self.img_rect = None
-        self.is_dragging = False
+
+    def update_possible_moves(self):
+        data = self.current_board.board_square
+        all_square = [element for sublist in data for element in sublist]
+        self.possible_moves = []
+
+        x, y = self.position
+
+        possible_offsets = [
+            (-1, -1), (-1, 0), (-1, 1),
+            (0, -1),           (0, 1),
+            (1, -1), (1, 0), (1, 1),
+        ]
+
+        for dx, dy in possible_offsets:
+            new_x, new_y = x + dx, y + dy
+            if 0 <= new_x < 8 and 0 <= new_y < 8:
+                for square in all_square:
+
+                    if square.notation == [new_x, new_y]:
+                        self.possible_moves.append(square)
+                        break
 
 
 class Rook(Piece):
     def __init__(self, color, current_board, current_square):
         super().__init__(color, current_board, current_square)
         self.piece_name = 'rook.png'
-        self.img_rect = None
-        self.is_dragging = False
 
 
 class Bishop(Piece):
     def __init__(self, color, current_board, current_square):
         super().__init__(color, current_board, current_square)
         self.piece_name = 'bishop.png'
-        self.img_rect = None
-        self.is_dragging = False
 
 
 class Knight(Piece):
     def __init__(self, color, current_board, current_square):
         super().__init__(color, current_board, current_square)
         self.piece_name = 'knight.png'
-        self.img_rect = None
-        self.is_dragging = False
 
 
 class Q(Piece):
     def __init__(self, color, current_board, current_square):
         super().__init__(color, current_board, current_square)
         self.piece_name = 'q.png'
-        self.img_rect = None
-        self.is_dragging = False
+
