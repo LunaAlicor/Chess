@@ -78,15 +78,15 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            # Обработка нажатия кнопки мыши для всех объектов Pawn
+            # Обработка нажатия кнопки мыши для всех объектов Piece
             for piece in test_board.pieces:
                 piece.handle_mouse_down(event)
         elif event.type == pygame.MOUSEBUTTONUP:
-            # Обработка отпускания кнопки мыши для всех объектов Pawn
+            # Обработка отпускания кнопки мыши для всех объектов Piece
             for piece in test_board.pieces:
                 piece.handle_mouse_up(event)
         elif event.type == pygame.MOUSEMOTION:
-            # Обработка перетаскивания фигур для всех объектов Pawn
+            # Обработка перетаскивания фигур для всех объектов Piece
             for piece in test_board.pieces:
                 piece.handle_mouse_drag(event)
     # Проверяем, если перемещение происходит

@@ -224,6 +224,28 @@ class Pawn(Piece):
         super().__init__(color, current_board, current_square)
         self.piece_name = 'pawn.png'
 
+    def update_possible_moves(self):
+        data = self.current_board.board_square
+        all_square = [element for sublist in data for element in sublist]
+        self.possible_moves = []
+
+        x, y = self.position
+
+        if self.color == "white":
+            direction = -1
+            start_row = 6
+        else:
+            direction = 1
+            start_row = 1
+
+        for move_distance in range(1, 3 if not self.has_moved else 2):
+            new_x, new_y = x, y + direction * move_distance
+            if 0 <= new_x < 8 and 0 <= new_y < 8:
+                for square in all_square:
+                    if square.notation == [new_x, new_y]:
+                        self.possible_moves.append(square)
+                        break
+
 
 class King(Piece):
     def __init__(self, color, current_board, current_square):
@@ -258,11 +280,56 @@ class Rook(Piece):
         super().__init__(color, current_board, current_square)
         self.piece_name = 'rook.png'
 
+    def update_possible_moves(self):
+        data = self.current_board.board_square
+        all_square = [element for sublist in data for element in sublist]
+        self.possible_moves = []
+
+        x, y = self.position
+
+        possible_offsets = [
+            (-1, 0), (1, 0),
+            (0, -1), (0, 1),
+        ]
+
+        for dx, dy in possible_offsets:
+            new_x, new_y = x + dx, y + dy
+            while 0 <= new_x < 8 and 0 <= new_y < 8:
+                for square in all_square:
+                    if square.notation == [new_x, new_y]:
+                        self.possible_moves.append(square)
+                        if square != self.current_square:  # Исключаем текущую клетку
+                            break
+                new_x += dx
+                new_y += dy
+
 
 class Bishop(Piece):
     def __init__(self, color, current_board, current_square):
         super().__init__(color, current_board, current_square)
         self.piece_name = 'bishop.png'
+
+    def update_possible_moves(self):
+        data = self.current_board.board_square
+        all_square = [element for sublist in data for element in sublist]
+        self.possible_moves = []
+
+        x, y = self.position
+
+        possible_offsets = [
+            (-1, -1), (-1, 1),
+            (1, -1), (1, 1),
+        ]
+        for dx, dy in possible_offsets:
+            new_x, new_y = x + dx, y + dy
+            while 0 <= new_x < 8 and 0 <= new_y < 8:
+                for square in all_square:
+                    if square.notation == [new_x, new_y]:
+                        self.possible_moves.append(square)
+                        if square != self.current_square:
+                            break
+                new_x += dx
+                new_y += dy
 
 
 class Knight(Piece):
@@ -270,9 +337,55 @@ class Knight(Piece):
         super().__init__(color, current_board, current_square)
         self.piece_name = 'knight.png'
 
+    def update_possible_moves(self):
+        data = self.current_board.board_square
+        all_square = [element for sublist in data for element in sublist]
+        self.possible_moves = []
+
+        x, y = self.position
+
+        possible_offsets = [
+            (-2, -1), (-2, 1),
+            (-1, -2), (-1, 2),
+            (1, -2), (1, 2),
+            (2, -1), (2, 1),
+        ]
+
+        for dx, dy in possible_offsets:
+            new_x, new_y = x + dx, y + dy
+            if 0 <= new_x < 8 and 0 <= new_y < 8:
+                for square in all_square:
+                    if square.notation == [new_x, new_y]:
+                        self.possible_moves.append(square)
+                        break
+
 
 class Q(Piece):
     def __init__(self, color, current_board, current_square):
         super().__init__(color, current_board, current_square)
         self.piece_name = 'q.png'
+
+    def update_possible_moves(self):
+        data = self.current_board.board_square
+        all_square = [element for sublist in data for element in sublist]
+        self.possible_moves = []
+
+        x, y = self.position
+
+        possible_offsets = [
+            (-1, -1), (-1, 0), (-1, 1),
+            (0, -1),           (0, 1),
+            (1, -1), (1, 0), (1, 1),
+        ]
+
+        for dx, dy in possible_offsets:
+            new_x, new_y = x + dx, y + dy
+            while 0 <= new_x < 8 and 0 <= new_y < 8:
+                for square in all_square:
+                    if square.notation == [new_x, new_y]:
+                        self.possible_moves.append(square)
+                        if square != self.current_square:  # Исключаем текущую клетку
+                            break
+                new_x += dx
+                new_y += dy
 
