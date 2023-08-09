@@ -154,6 +154,7 @@ class Piece:
         self.current_board.add_piece(self)
         self.img_rect = None
         self.is_dragging = False
+        self.def_status = None
 
     def move(self):
         pass
@@ -184,6 +185,7 @@ class Piece:
 
     def handle_mouse_down(self, event):
         # Обработка события нажатия кнопки мыши
+        # TODO Добавить проверку на то чей ход
         if event.button == 1 and self.img_rect.collidepoint(event.pos):
             self.is_dragging = True
             self.start_drag_x, self.start_drag_y = event.pos[0] - self.img_rect.x, event.pos[1] - self.img_rect.y
@@ -198,12 +200,16 @@ class Piece:
                                             nested_list=self.current_board.board_square)
 
             if result and result in self.possible_moves:
+                self.current_square.set_piece(None)
                 self.current_square = result
                 self.img_rect.center = self.current_square.centre
                 self.has_moved = True
                 self.position = self.current_square.notation
+                result.set_piece(self)
+                # TODO добавить переключение хода
             else:
                 self.img_rect.center = self.current_square.centre
+                # TODO возможно баг фиксится тут
         except:
             pass
 
@@ -225,6 +231,7 @@ class Pawn(Piece):
         self.piece_name = 'pawn.png'
 
     def update_possible_moves(self):
+        # TODO добавить функцию превращения в ферзя если 1 или 8 линия
         data = self.current_board.board_square
         all_square = [element for sublist in data for element in sublist]
         self.possible_moves = []
@@ -241,10 +248,22 @@ class Pawn(Piece):
         for move_distance in range(1, 3 if not self.has_moved else 2):
             new_x, new_y = x, y + direction * move_distance
             if 0 <= new_x < 8 and 0 <= new_y < 8:
+                target_square = None
                 for square in all_square:
                     if square.notation == [new_x, new_y]:
-                        self.possible_moves.append(square)
+                        target_square = square
                         break
+
+                path_clear = True
+                for i in range(1, move_distance):
+                    check_x, check_y = x, y + direction * i
+                    for square in all_square:
+                        if square.notation == [check_x, check_y] and square.piece is not None:
+                            path_clear = False
+                            break
+
+                if target_square is not None and target_square.piece is None and path_clear:
+                    self.possible_moves.append(target_square)
 
 
 class King(Piece):
@@ -264,13 +283,14 @@ class King(Piece):
             (0, -1),           (0, 1),
             (1, -1), (1, 0), (1, 1),
         ]
-
+        # TODO Где-то тут реализовывается рокировка
+        # TODO Проверить чтобы король не мог наступить на клетку под боем
         for dx, dy in possible_offsets:
             new_x, new_y = x + dx, y + dy
             if 0 <= new_x < 8 and 0 <= new_y < 8:
                 for square in all_square:
 
-                    if square.notation == [new_x, new_y]:
+                    if square.notation == [new_x, new_y] and square.piece is None:
                         self.possible_moves.append(square)
                         break
 
@@ -295,11 +315,21 @@ class Rook(Piece):
         for dx, dy in possible_offsets:
             new_x, new_y = x + dx, y + dy
             while 0 <= new_x < 8 and 0 <= new_y < 8:
+                target_square = None
                 for square in all_square:
                     if square.notation == [new_x, new_y]:
-                        self.possible_moves.append(square)
-                        if square != self.current_square:  # Исключаем текущую клетку
-                            break
+                        target_square = square
+                        break
+
+                if target_square is not None:
+                    if target_square.piece is None:
+                        self.possible_moves.append(target_square)
+                    else:
+                        # TODO функция взятия
+                        # if target_square.piece.color != self.color:
+                        #     self.possible_moves.append(target_square)
+                        break
+
                 new_x += dx
                 new_y += dy
 
@@ -323,11 +353,20 @@ class Bishop(Piece):
         for dx, dy in possible_offsets:
             new_x, new_y = x + dx, y + dy
             while 0 <= new_x < 8 and 0 <= new_y < 8:
+                target_square = None
                 for square in all_square:
                     if square.notation == [new_x, new_y]:
-                        self.possible_moves.append(square)
-                        if square != self.current_square:
-                            break
+                        target_square = square
+                        break
+
+                if target_square is not None:
+                    if target_square.piece is not None:
+                        # TODO Функция взятия
+                        #  self.possible_moves.append(target_square)
+                        break
+                    else:
+                        self.possible_moves.append(target_square)
+
                 new_x += dx
                 new_y += dy
 
@@ -355,7 +394,8 @@ class Knight(Piece):
             new_x, new_y = x + dx, y + dy
             if 0 <= new_x < 8 and 0 <= new_y < 8:
                 for square in all_square:
-                    if square.notation == [new_x, new_y]:
+                    if square.notation == [new_x, new_y] and square.piece is None:
+                        #TODO Добавить в условие взятие
                         self.possible_moves.append(square)
                         break
 
@@ -374,18 +414,27 @@ class Q(Piece):
 
         possible_offsets = [
             (-1, -1), (-1, 0), (-1, 1),
-            (0, -1),           (0, 1),
+            (0, -1), (0, 1),
             (1, -1), (1, 0), (1, 1),
         ]
 
         for dx, dy in possible_offsets:
             new_x, new_y = x + dx, y + dy
             while 0 <= new_x < 8 and 0 <= new_y < 8:
+                target_square = None
                 for square in all_square:
                     if square.notation == [new_x, new_y]:
+                        target_square = square
+                        break
+
+                if target_square is not None:
+                    if target_square.piece is not None:
+                        #  TODO Добавить взятие
+                        # self.possible_moves.append(square)
+                        break
+                    else:
                         self.possible_moves.append(square)
-                        if square != self.current_square:  # Исключаем текущую клетку
-                            break
+
                 new_x += dx
                 new_y += dy
 
