@@ -81,14 +81,14 @@ while running:
             # Обработка нажатия кнопки мыши для всех объектов Piece
             for piece in test_board.pieces:
                 piece.handle_mouse_down(event)
-        elif event.type == pygame.MOUSEBUTTONUP:
-            # Обработка отпускания кнопки мыши для всех объектов Piece
-            for piece in test_board.pieces:
-                piece.handle_mouse_up(event)
         elif event.type == pygame.MOUSEMOTION:
             # Обработка перетаскивания фигур для всех объектов Piece
             for piece in test_board.pieces:
                 piece.handle_mouse_drag(event)
+        elif event.type == pygame.MOUSEBUTTONUP:
+            # Обработка отпускания кнопки мыши для всех объектов Piece
+            for piece in test_board.pieces:
+                piece.handle_mouse_up(event)
     # Проверяем, если перемещение происходит
     if is_dragging:
         # Обновляем координаты изображения в соответствии с записанной позицией курсора
@@ -98,6 +98,7 @@ while running:
     screen.fill(WHITE)
 
     # Отрисовка доски
+    # print(test_board.target)
     draw_chessboard()
     draw_pieces(screen=screen, board=test_board)
 

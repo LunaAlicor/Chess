@@ -23,6 +23,7 @@ class Board:
         self.flag = 0
         self.square_size = SQUARE_SIZE
         self.who_move = None
+        self.target = None
 
     def create(self):
         self.flag = 1
@@ -114,6 +115,9 @@ class Board:
     def add_piece(self, piece):
         self.pieces.append(piece)
 
+    def set_target(self, new_target):
+        self.target = new_target
+
 
 class Square:
     on_fire_dict = {0: 'white', 1: 'black', 2: 'black and white', 3: None}
@@ -165,6 +169,10 @@ class Piece:
     def img_update(self):
         pass
 
+    def crutch_1(self):
+        for i_piece in self.current_board.pieces:
+            i_piece.possible_moves = []
+
     def set_img(self):
         if self.color == "white":
             path_components = ['Piece_img', 'defolt', 'white', self.piece_name]
@@ -189,9 +197,12 @@ class Piece:
         if event.button == 1 and self.img_rect.collidepoint(event.pos):
             self.is_dragging = True
             self.start_drag_x, self.start_drag_y = event.pos[0] - self.img_rect.x, event.pos[1] - self.img_rect.y
+            self.current_board.set_target(self)
 
     def handle_mouse_up(self, event):
         # Обработка события отпускания кнопки мыши
+
+        old_square = self.current_square
         self.is_dragging = False
 
         try:
@@ -199,7 +210,7 @@ class Piece:
             result = search_coordinates_on_board(coordinates=self.point_to_check,
                                             nested_list=self.current_board.board_square)
 
-            if result and result in self.possible_moves:
+            if result and result in self.possible_moves and self.current_board.target == self:
                 self.current_square.set_piece(None)
                 self.current_square = result
                 self.img_rect.center = self.current_square.centre
@@ -208,10 +219,15 @@ class Piece:
                 result.set_piece(self)
                 # TODO добавить переключение хода
             else:
-                self.img_rect.center = self.current_square.centre
+                self.possible_moves = []
+                self.current_square = old_square
+                old_square.set_piece(self)
+                self.img_rect.center = old_square.centre
+                self.position = old_square.notation
                 # TODO возможно баг фиксится тут
         except:
             pass
+
 
     def handle_mouse_drag(self, event):
         # Обработка события перетаскивания фигуры
