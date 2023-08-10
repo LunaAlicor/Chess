@@ -16,6 +16,8 @@ def search_coordinates_on_board(coordinates, nested_list):
 
 
 class Board:
+    on_fire_dict = {0: 'white', 1: 'black', 2: 'black and white', 3: None}
+
     def __init__(self, SQUARE_SIZE):
         self.board_square = []
         self.pieces = []
@@ -118,6 +120,18 @@ class Board:
     def set_target(self, new_target):
         self.target = new_target
 
+    def update_fire_status(self):
+        data = self.board_square
+        all_square = [element for sublist in data for element in sublist]
+        # TODO Доделать
+
+    def take_check(self):
+        data = self.board_square
+        all_square = [element for sublist in data for element in sublist]
+        for i_square in all_square:
+            if len(i_square.piece) > 1:
+                i_square.piece.pop(0)
+
 
 class Square:
     on_fire_dict = {0: 'white', 1: 'black', 2: 'black and white', 3: None}
@@ -158,7 +172,7 @@ class Piece:
         self.current_board.add_piece(self)
         self.img_rect = None
         self.is_dragging = False
-        self.def_status = None
+        self.def_status = False
 
     def move(self):
         pass
@@ -166,12 +180,17 @@ class Piece:
     def taken(self):
         pass
 
-    def img_update(self):
-        pass
-
-    def crutch_1(self):
-        for i_piece in self.current_board.pieces:
-            i_piece.possible_moves = []
+    def die(self):
+        self.current_board.pieces.remove(self)
+        self.img = None
+        self.img_rect = None
+        self.color = None
+        self.is_alive = False
+        self.current_board = None
+        self.current_square = None
+        self.coordinates = None
+        self.position = None
+        self.def_status = False
 
     def set_img(self):
         if self.color == "white":
@@ -211,15 +230,19 @@ class Piece:
                                             nested_list=self.current_board.board_square)
 
             if result and result in self.possible_moves and self.current_board.target == self:
+                if result.piece != self and result.piece is not None:
+                    result.piece.die()
                 self.current_square.set_piece(None)
                 self.current_square = result
                 self.img_rect.center = self.current_square.centre
                 self.has_moved = True
                 self.position = self.current_square.notation
                 result.set_piece(self)
+                self.update_possible_moves()
                 # TODO добавить переключение хода
             else:
-                self.possible_moves = []
+                # self.possible_moves = []
+                self.update_possible_moves()
                 self.current_square = old_square
                 old_square.set_piece(self)
                 self.img_rect.center = old_square.centre
@@ -227,7 +250,6 @@ class Piece:
                 # TODO возможно баг фиксится тут
         except:
             pass
-
 
     def handle_mouse_drag(self, event):
         # Обработка события перетаскивания фигуры
@@ -247,7 +269,8 @@ class Pawn(Piece):
         self.piece_name = 'pawn.png'
 
     def update_possible_moves(self):
-        # TODO добавить функцию превращения в ферзя если 1 или 8 линия
+        # TODO Добавить превращение в ферзя
+        # TODO Добавить взятие на проходе
         data = self.current_board.board_square
         all_square = [element for sublist in data for element in sublist]
         self.possible_moves = []
@@ -260,6 +283,36 @@ class Pawn(Piece):
         else:
             direction = 1
             start_row = 1
+
+        # Добавляем ход вперёд-влево
+        new_x, new_y = x - 1, y + direction
+        if 0 <= new_x < 8 and 0 <= new_y < 8:
+            target_square = None
+            for square in all_square:
+                if square.notation == [new_x, new_y]:
+                    if square.piece is not None:
+                        if square.piece.color != self.color:
+                            target_square = square
+                            self.possible_moves.append(target_square)
+                            break
+
+            if target_square is not None and target_square.piece is None:
+                self.possible_moves.append(target_square)
+
+        # Добавляем ход вперёд-вправо
+        new_x, new_y = x + 1, y + direction
+        if 0 <= new_x < 8 and 0 <= new_y < 8:
+            target_square = None
+            for square in all_square:
+                if square.notation == [new_x, new_y]:
+                    if square.piece is not None:
+                        if square.piece.color != self.color:
+                            target_square = square
+                            self.possible_moves.append(target_square)
+                            break
+
+            if target_square is not None and target_square.piece is None:
+                self.possible_moves.append(target_square)
 
         for move_distance in range(1, 3 if not self.has_moved else 2):
             new_x, new_y = x, y + direction * move_distance
@@ -309,6 +362,10 @@ class King(Piece):
                     if square.notation == [new_x, new_y] and square.piece is None:
                         self.possible_moves.append(square)
                         break
+                    elif square.notation == [new_x, new_y] and square.piece is not None:
+                        if square.piece.color != self.color and square.piece.def_status is False:
+                            self.possible_moves.append(square)
+                            break
 
 
 class Rook(Piece):
@@ -341,13 +398,14 @@ class Rook(Piece):
                     if target_square.piece is None:
                         self.possible_moves.append(target_square)
                     else:
-                        # TODO функция взятия
-                        # if target_square.piece.color != self.color:
-                        #     self.possible_moves.append(target_square)
+                        if target_square.piece.color != self.color:
+                            self.possible_moves.append(target_square)
                         break
 
-                new_x += dx
-                new_y += dy
+                    if target_square.piece is not None:
+                        break
+
+                new_x, new_y = new_x + dx, new_y + dy
 
 
 class Bishop(Piece):
@@ -376,12 +434,12 @@ class Bishop(Piece):
                         break
 
                 if target_square is not None:
-                    if target_square.piece is not None:
-                        # TODO Функция взятия
-                        #  self.possible_moves.append(target_square)
-                        break
-                    else:
+                    if target_square.piece is None:
                         self.possible_moves.append(target_square)
+                    else:
+                        if target_square.piece.color != self.color:
+                            self.possible_moves.append(target_square)
+                        break
 
                 new_x += dx
                 new_y += dy
@@ -411,9 +469,12 @@ class Knight(Piece):
             if 0 <= new_x < 8 and 0 <= new_y < 8:
                 for square in all_square:
                     if square.notation == [new_x, new_y] and square.piece is None:
-                        #TODO Добавить в условие взятие
                         self.possible_moves.append(square)
                         break
+                    elif square.notation == [new_x, new_y] and square.piece is not None:
+                        if square.piece.color != self.color:
+                            self.possible_moves.append(square)
+                            break
 
 
 class Q(Piece):
@@ -444,12 +505,12 @@ class Q(Piece):
                         break
 
                 if target_square is not None:
-                    if target_square.piece is not None:
-                        #  TODO Добавить взятие
-                        # self.possible_moves.append(square)
-                        break
+                    if target_square.piece is None:
+                        self.possible_moves.append(target_square)
                     else:
-                        self.possible_moves.append(square)
+                        if target_square.piece.color != self.color:
+                            self.possible_moves.append(target_square)
+                        break
 
                 new_x += dx
                 new_y += dy

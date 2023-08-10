@@ -64,13 +64,14 @@ running = True
 test_board = Board(SQUARE_SIZE=100)
 test_board.create()
 board = test_board.get_board_square()
-###############################################
+################################################
 print(board[0][4].piece)
 board[0][4].piece.update_possible_moves()
 print(board[0][4].piece.possible_moves)
+# print(test_board.update_fire_status())
 # print(board[0][1].piece.coordinates)
 #  print(test_board.board_square[0][1].notation)
-###############################################
+################################################
 
 # Главный игровой цикл
 while running:
@@ -98,7 +99,7 @@ while running:
     screen.fill(WHITE)
 
     # Отрисовка доски
-    # print(test_board.target)
+    # print(test_board.pieces)
     draw_chessboard()
     draw_pieces(screen=screen, board=test_board)
 
