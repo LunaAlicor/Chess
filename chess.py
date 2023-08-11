@@ -68,6 +68,7 @@ board = test_board.get_board_square()
 print(board[0][7].piece.has_moved)
 board[0][4].piece.update_possible_moves()
 print(board[0][7].piece)
+test_pawn = board[6][7].piece
 # print(test_board.update_fire_status())
 # print(board[0][1].piece.coordinates)
 #  print(test_board.board_square[0][1].notation)
@@ -99,7 +100,8 @@ while running:
     screen.fill(WHITE)
 
     # Отрисовка доски
-    # print(test_board.pieces)
+    #print(test_pawn.has_moved)
+    #print(test_pawn.double_move_status)
     draw_chessboard()
     draw_pieces(screen=screen, board=test_board)
 

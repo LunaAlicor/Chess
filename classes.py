@@ -26,6 +26,8 @@ class Board:
         self.square_size = SQUARE_SIZE
         self.who_move = None
         self.target = None
+        self.white_king = None
+        self.black_king = None
 
     def create(self):
         self.flag = 1
@@ -102,6 +104,8 @@ class Board:
                 # print(square.coordinates)
                 row_squares.append(square)
             self.board_square.append(row_squares)
+        self.white_king = self.board_square[7][4].piece
+        self.black_king = self.board_square[0][4].piece
 
     def get_board_square(self):
         return self.board_square
@@ -125,12 +129,10 @@ class Board:
         all_square = [element for sublist in data for element in sublist]
         # TODO Доделать
 
-    def take_check(self):
-        data = self.board_square
-        all_square = [element for sublist in data for element in sublist]
-        for i_square in all_square:
-            if len(i_square.piece) > 1:
-                i_square.piece.pop(0)
+    def update_all_move(self):
+        for i_piece in self.pieces:
+            i_piece.update_possible_moves()
+            # print(i_piece, i_piece.possible_moves)
 
 
 class Square:
@@ -143,7 +145,7 @@ class Square:
         self.centre = [x + y for x, y in zip(self.coordinates, [50, 50])]  # [750; 750]
         self.color = color
         self.end_line = end_line
-        self.on_fire = self.on_fire_dict[3]
+        self.on_fire = []
         self.piece = piece
         self.inside_pixels = [[x for x in range(self.coordinates[0], self.coordinates[0]+96)],
                               [y for y in range(self.coordinates[1], self.coordinates[1]+96)]]
@@ -266,6 +268,7 @@ class Pawn(Piece):
     def __init__(self, color, current_board: Board, current_square: Square):
         super().__init__(color, current_board, current_square)
         self.piece_name = 'pawn.png'
+        self.double_move_status = False
 
     def update_possible_moves(self):
         # TODO Добавить превращение в ферзя
@@ -335,12 +338,25 @@ class Pawn(Piece):
 
 
 class King(Piece):
-    castle_dict = {0: 'left', 1: "right"}
 
     def __init__(self, color, current_board, current_square):
         super().__init__(color, current_board, current_square)
         self.piece_name = 'king.png'
-        self.castle_status = None
+        self.check = False
+
+    def can_move(self, new_square):
+        # TODO удалить из possible moves ход пешкой вперед потому что это не атака
+        flag = 0
+        self.current_board.update_all_move()
+        for i_piece in self.current_board.pieces:
+            if new_square in i_piece.possible_moves and i_piece.color != self.color:
+                flag = 1
+            else:
+                pass
+        if flag == 1:
+            return False
+        else:
+            return True
 
     def handle_mouse_up(self, event):
         # Обработка события отпускания кнопки мыши
@@ -353,7 +369,8 @@ class King(Piece):
             result = search_coordinates_on_board(coordinates=self.point_to_check,
                                             nested_list=self.current_board.board_square)
 
-            if result and result in self.possible_moves and self.current_board.target == self:
+            if result and result in self.possible_moves and self.current_board.target == self and \
+                    self.can_move(result) is True:
                 if result.piece != self and result.piece is not None:
                     result.piece.die()
                 self.current_square.set_piece(None)
@@ -426,39 +443,40 @@ class King(Piece):
         ]
         # TODO Добавить проверку на шах и на битое поле на пути рокировки
         try:
-            if self.color == 'white':
-                # print(self.current_board.board_square[7][0].piece)
-                # print(self.current_board.board_square[7][7].piece)
-                # Рокировка вправо
-                if not self.has_moved and not self.current_board.board_square[7][7].piece.has_moved:
-                    if all(self.current_board.board_square[7][i].piece is None for i in range(5, 7)):
-                        self.possible_moves.append(self.current_board.board_square[7][6])
-                # Рокировка влево
-                if not self.has_moved and not self.current_board.board_square[7][0].piece.has_moved:
-                    if all(self.current_board.board_square[7][i].piece is None for i in range(1, 4)):
-                        self.possible_moves.append(self.current_board.board_square[7][2])
+            if self.check is False:
+                if self.color == 'white':
+                    # print(self.current_board.board_square[7][0].piece)
+                    # print(self.current_board.board_square[7][7].piece)
+                    # Рокировка вправо
+                    if not self.has_moved and not self.current_board.board_square[7][7].piece.has_moved:
+                        if all(self.current_board.board_square[7][i].piece is None for i in range(5, 7)):
+                            self.possible_moves.append(self.current_board.board_square[7][6])
+                    # Рокировка влево
+                    if not self.has_moved and not self.current_board.board_square[7][0].piece.has_moved:
+                        if all(self.current_board.board_square[7][i].piece is None for i in range(1, 4)):
+                            self.possible_moves.append(self.current_board.board_square[7][2])
 
-            else:
-                if not self.has_moved and not self.current_board.board_square[0][7].piece.has_moved:
-                    if all(self.current_board.board_square[0][i].piece is None for i in range(5, 7)):
-                        self.possible_moves.append(self.current_board.board_square[0][6])
-                if not self.has_moved and not self.current_board.board_square[0][0].piece.has_moved:
-                    if all(self.current_board.board_square[0][i].piece is None for i in range(1, 4)):
-                        self.possible_moves.append(self.current_board.board_square[0][2])
+                else:
+                    if not self.has_moved and not self.current_board.board_square[0][7].piece.has_moved:
+                        if all(self.current_board.board_square[0][i].piece is None for i in range(5, 7)):
+                            self.possible_moves.append(self.current_board.board_square[0][6])
+                    if not self.has_moved and not self.current_board.board_square[0][0].piece.has_moved:
+                        if all(self.current_board.board_square[0][i].piece is None for i in range(1, 4)):
+                            self.possible_moves.append(self.current_board.board_square[0][2])
         except:
             pass
             # Рокировка невозможна
-        # TODO Проверить чтобы король не мог наступить на клетку под боем
+
         for dx, dy in possible_offsets:
             new_x, new_y = x + dx, y + dy
             if 0 <= new_x < 8 and 0 <= new_y < 8:
                 for square in all_square:
 
-                    if square.notation == [new_x, new_y] and square.piece is None:
+                    if square.notation == [new_x, new_y] and (square.piece is None or square.on_fire == self.color):
                         self.possible_moves.append(square)
                         break
                     elif square.notation == [new_x, new_y] and square.piece is not None:
-                        if square.piece.color != self.color and square.piece.def_status is False:
+                        if square.piece.color != self.color and square.piece.def_status is False:  # or == self.color
                             self.possible_moves.append(square)
                             break
 
