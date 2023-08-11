@@ -247,7 +247,6 @@ class Piece:
                 old_square.set_piece(self)
                 self.img_rect.center = old_square.centre
                 self.position = old_square.notation
-                # TODO возможно баг фиксится тут
         except:
             pass
 
@@ -336,9 +335,82 @@ class Pawn(Piece):
 
 
 class King(Piece):
+    castle_dict = {0: 'left', 1: "right"}
+
     def __init__(self, color, current_board, current_square):
         super().__init__(color, current_board, current_square)
         self.piece_name = 'king.png'
+        self.castle_status = None
+
+    def handle_mouse_up(self, event):
+        # Обработка события отпускания кнопки мыши
+
+        old_square = self.current_square
+        self.is_dragging = False
+
+        try:
+            self.update_possible_moves()
+            result = search_coordinates_on_board(coordinates=self.point_to_check,
+                                            nested_list=self.current_board.board_square)
+
+            if result and result in self.possible_moves and self.current_board.target == self:
+                if result.piece != self and result.piece is not None:
+                    result.piece.die()
+                self.current_square.set_piece(None)
+                if self.color == 'white':
+                    if result == self.current_board.board_square[7][6] and self.has_moved is False:
+                        rook = self.current_board.board_square[7][7].piece
+                        rook.current_square = self.current_board.board_square[7][5]
+                        rook.img_rect.center = rook.current_square.centre
+                        rook.has_moved = True
+                        rook.position = rook.current_square.notation
+                        self.current_board.board_square[7][5].set_piece(rook)
+                        self.current_board.board_square[7][7].set_piece(None)
+                        rook.update_possible_moves()
+                    if result == self.current_board.board_square[7][2] and self.has_moved is False:
+                        rook = self.current_board.board_square[7][0].piece
+                        rook.current_square = self.current_board.board_square[7][3]
+                        rook.img_rect.center = rook.current_square.centre
+                        rook.has_moved = True
+                        rook.position = rook.current_square.notation
+                        self.current_board.board_square[7][3].set_piece(rook)
+                        self.current_board.board_square[7][0].set_piece(None)
+                        rook.update_possible_moves()
+                else:
+                    if result == self.current_board.board_square[0][6] and self.has_moved is False:
+                        rook = self.current_board.board_square[0][7].piece
+                        rook.current_square = self.current_board.board_square[0][5]
+                        rook.img_rect.center = rook.current_square.centre
+                        rook.has_moved = True
+                        rook.position = rook.current_square.notation
+                        self.current_board.board_square[0][5].set_piece(rook)
+                        self.current_board.board_square[0][7].set_piece(None)
+                        rook.update_possible_moves()
+                    if result == self.current_board.board_square[0][2] and self.has_moved is False:
+                        rook = self.current_board.board_square[0][0].piece
+                        rook.current_square = self.current_board.board_square[0][3]
+                        rook.img_rect.center = rook.current_square.centre
+                        rook.has_moved = True
+                        rook.position = rook.current_square.notation
+                        self.current_board.board_square[0][3].set_piece(rook)
+                        self.current_board.board_square[0][0].set_piece(None)
+                        rook.update_possible_moves()
+                self.current_square = result
+                self.img_rect.center = self.current_square.centre
+                self.has_moved = True
+                self.position = self.current_square.notation
+                result.set_piece(self)
+                self.update_possible_moves()
+                # TODO добавить переключение хода
+            else:
+                # self.possible_moves = []
+                self.update_possible_moves()
+                self.current_square = old_square
+                old_square.set_piece(self)
+                self.img_rect.center = old_square.centre
+                self.position = old_square.notation
+        except:
+            pass
 
     def update_possible_moves(self):
         data = self.current_board.board_square
@@ -352,7 +424,30 @@ class King(Piece):
             (0, -1),           (0, 1),
             (1, -1), (1, 0), (1, 1),
         ]
-        # TODO Где-то тут реализовывается рокировка
+        # TODO Добавить проверку на шах и на битое поле на пути рокировки
+        try:
+            if self.color == 'white':
+                # print(self.current_board.board_square[7][0].piece)
+                # print(self.current_board.board_square[7][7].piece)
+                # Рокировка вправо
+                if not self.has_moved and not self.current_board.board_square[7][7].piece.has_moved:
+                    if all(self.current_board.board_square[7][i].piece is None for i in range(5, 7)):
+                        self.possible_moves.append(self.current_board.board_square[7][6])
+                # Рокировка влево
+                if not self.has_moved and not self.current_board.board_square[7][0].piece.has_moved:
+                    if all(self.current_board.board_square[7][i].piece is None for i in range(1, 4)):
+                        self.possible_moves.append(self.current_board.board_square[7][2])
+
+            else:
+                if not self.has_moved and not self.current_board.board_square[0][7].piece.has_moved:
+                    if all(self.current_board.board_square[0][i].piece is None for i in range(5, 7)):
+                        self.possible_moves.append(self.current_board.board_square[0][6])
+                if not self.has_moved and not self.current_board.board_square[0][0].piece.has_moved:
+                    if all(self.current_board.board_square[0][i].piece is None for i in range(1, 4)):
+                        self.possible_moves.append(self.current_board.board_square[0][2])
+        except:
+            pass
+            # Рокировка невозможна
         # TODO Проверить чтобы король не мог наступить на клетку под боем
         for dx, dy in possible_offsets:
             new_x, new_y = x + dx, y + dy
