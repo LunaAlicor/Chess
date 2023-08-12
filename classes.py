@@ -131,7 +131,12 @@ class Board:
 
     def update_all_move(self):
         for i_piece in self.pieces:
-            i_piece.update_possible_moves()
+            if i_piece.piece_name == 'rook.png':
+                i_piece.update_possible_moves(for_move=False)
+            elif i_piece.piece_name == 'bishop.png':
+                i_piece.update_possible_moves(for_move=False)
+            else:
+                i_piece.update_possible_moves()
             # print(i_piece, i_piece.possible_moves)
 
 
@@ -430,6 +435,8 @@ class King(Piece):
             pass
 
     def update_possible_moves(self):
+        enemy_pieces = [piece for piece in self.current_board.pieces if piece.color != self.color]
+        enemy_squares = [j_square for enemy_piece in enemy_pieces for j_square in enemy_piece.possible_moves]
         data = self.current_board.board_square
         all_square = [element for sublist in data for element in sublist]
         self.possible_moves = []
@@ -445,24 +452,29 @@ class King(Piece):
         try:
             if self.check is False:
                 if self.color == 'white':
-                    # print(self.current_board.board_square[7][0].piece)
-                    # print(self.current_board.board_square[7][7].piece)
                     # Рокировка вправо
                     if not self.has_moved and not self.current_board.board_square[7][7].piece.has_moved:
                         if all(self.current_board.board_square[7][i].piece is None for i in range(5, 7)):
-                            self.possible_moves.append(self.current_board.board_square[7][6])
+                            if all(self.current_board.board_square[7][i] not in enemy_squares for i in range(4, 7)):
+                                self.possible_moves.append(self.current_board.board_square[7][6])
                     # Рокировка влево
                     if not self.has_moved and not self.current_board.board_square[7][0].piece.has_moved:
                         if all(self.current_board.board_square[7][i].piece is None for i in range(1, 4)):
-                            self.possible_moves.append(self.current_board.board_square[7][2])
+                            if all(self.current_board.board_square[7][i] not in enemy_squares for i in range(2, 4)):
+                                self.possible_moves.append(self.current_board.board_square[7][2])
 
                 else:
+                    # Рокировка вправо
                     if not self.has_moved and not self.current_board.board_square[0][7].piece.has_moved:
                         if all(self.current_board.board_square[0][i].piece is None for i in range(5, 7)):
-                            self.possible_moves.append(self.current_board.board_square[0][6])
+                            if all(self.current_board.board_square[0][i] not in enemy_squares for i in range(4, 7)):
+                                self.possible_moves.append(self.current_board.board_square[0][6])
+                    # Рокировка влево
                     if not self.has_moved and not self.current_board.board_square[0][0].piece.has_moved:
                         if all(self.current_board.board_square[0][i].piece is None for i in range(1, 4)):
-                            self.possible_moves.append(self.current_board.board_square[0][2])
+                            if all(self.current_board.board_square[0][i] not in enemy_squares for i in range(2, 4)):
+                                self.possible_moves.append(self.current_board.board_square[0][2])
+
         except:
             pass
             # Рокировка невозможна
@@ -486,7 +498,7 @@ class Rook(Piece):
         super().__init__(color, current_board, current_square)
         self.piece_name = 'rook.png'
 
-    def update_possible_moves(self):
+    def update_possible_moves(self, for_move=True):
         data = self.current_board.board_square
         all_square = [element for sublist in data for element in sublist]
         self.possible_moves = []
@@ -513,10 +525,14 @@ class Rook(Piece):
                     else:
                         if target_square.piece.color != self.color:
                             self.possible_moves.append(target_square)
-                        break
+                        if for_move is True:
+                            break
+                        if target_square.piece.piece_name != 'king.png':
+                            break
 
                     if target_square.piece is not None:
-                        break
+                        if target_square.piece.color == self.color:
+                            break
 
                 new_x, new_y = new_x + dx, new_y + dy
 
@@ -526,7 +542,7 @@ class Bishop(Piece):
         super().__init__(color, current_board, current_square)
         self.piece_name = 'bishop.png'
 
-    def update_possible_moves(self):
+    def update_possible_moves(self, for_move=True):
         data = self.current_board.board_square
         all_square = [element for sublist in data for element in sublist]
         self.possible_moves = []
@@ -552,7 +568,8 @@ class Bishop(Piece):
                     else:
                         if target_square.piece.color != self.color:
                             self.possible_moves.append(target_square)
-                        break
+                        if target_square.piece.piece_name != 'king.png' or target_square.piece.color == self.color:
+                            break
 
                 new_x += dx
                 new_y += dy
@@ -623,7 +640,8 @@ class Q(Piece):
                     else:
                         if target_square.piece.color != self.color:
                             self.possible_moves.append(target_square)
-                        break
+                        if target_square.piece.piece_name != 'king.png' or target_square.piece.color == self.color:
+                            break
 
                 new_x += dx
                 new_y += dy
